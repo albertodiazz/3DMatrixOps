@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc -g
 TARGET = app
 # SRC = app.cpp
 SRC = rasterization.cpp

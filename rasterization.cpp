@@ -1,4 +1,5 @@
 /*#include <GL/glext.h>*/
+#include <cstdio>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
@@ -11,6 +12,8 @@
 #define MIN(a,b) ( ((a) < (b)) ? (a) : (b) )
 #define MAX(a,b) ( ((a) > (b)) ? (a) : (b) )
 #define NORM(x, xmin, xmax) ( 2.0f * ( (x - xmin) / (xmax - xmin) ) -1.0f )
+#define CX(x1, x2) ( (x1 + x2) / 2 )
+#define CY(y1, y2) ( (y1 + y2) / 2 )
 
 struct vec2d{
 	float x, y;
@@ -59,9 +62,8 @@ void display(){
 	drawCuadriculaX(spacing, w, lineasX);
 	drawCuadriculaY(spacing, h, lineasY);
 
-
-	/*__asm__("int3");*/
-
+	/*TODO:DEV*/
+	/*[] Terminar que los puntos se vean en el centro*/
 	glLineWidth(2.0f);
 	glBegin(GL_LINES);
 	glColor3f(0.0f,0.0f,0.0f);
@@ -73,7 +75,28 @@ void display(){
 	}
 	glEnd();
 
-	glFlush();
+	/*__asm__("int3");*/
+	glPointSize(15.0f);
+	glBegin(GL_POINTS);
+	int getX = (sizeof(lineasX) / sizeof(lineasX[0])) / static_cast<int>(spacing);
+	for (int i = 0; i < getX; i ++){
+		glVertex2d(
+				CX(lineasX[i].x, lineasX[i+2].x),
+				CY(lineasY[i].x, lineasY[i+2].x)
+				);
+	};
+	/*	if (i%2 == 0){*/
+	/*		glVertex2d(*/
+	/*				CX(CX(lineasY[i].x, lineasY[i+1].x), lineasY[i+2].x),*/
+	/*				CY(CY(lineasY[i].y, lineasY[i+1].y), lineasY[i+2].y) */
+	/*				);*/
+	/*	}*/
+	/*};*/
+glEnd();
+
+/*__asm__("int3");*/
+
+glFlush();
 };
 
 int main(int arg, char **argv){

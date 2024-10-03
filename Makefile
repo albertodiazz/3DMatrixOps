@@ -1,7 +1,9 @@
 CC = gcc
 TARGET = app
-SRC = app.cpp
-LIBS = -lGL -lGLU -lglut -lm
+# SRC = app.cpp
+SRC = rasterization.cpp
+LIBS = -lGL -lGLU -lglut -lm -lstdc++
+
 
 all: $(TARGET)
 

@@ -1,5 +1,7 @@
 /*#include <GL/glext.h>*/
+#include <csignal>
 #include <cstdio>
+#include <vector>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
@@ -21,7 +23,7 @@ struct vec2d{
 
 GLuint vbo, vbo2;
 
-void drawCuadriculaX(float spacing, int w, vec2d *v){
+void drawCuadriculaX(float spacing, int w, std::vector<vec2d> &v){
 	for (int i = 0; i < w; i ++){
 		if (i%2 == 0){
 			v[i].x = NORM(i * spacing, 0.0f, w); 
@@ -35,7 +37,7 @@ void drawCuadriculaX(float spacing, int w, vec2d *v){
 	};
 };
 
-void drawCuadriculaY(float spacing, int h, vec2d *v){
+void drawCuadriculaY(float spacing, int h, std::vector<vec2d> &v){
 	for (int i = 0; i < h; i ++){
 		if (i%2 == 0){
 			v[i].y = NORM(i * spacing, 0.0f, h); 
@@ -53,17 +55,24 @@ void display(){
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	const int w = glutGet(GLUT_INIT_WINDOW_WIDTH);
-	const int h = glutGet(GLUT_INIT_WINDOW_HEIGHT);
+	int w = glutGet(GLUT_INIT_WINDOW_WIDTH);
+	int h = glutGet(GLUT_INIT_WINDOW_HEIGHT);
 
-	vec2d lineasX[w], lineasY[h]; 
-	float spacing = 10.0f;
+	/*TODO:BUG*/
+	/*	Ten cuaidado con este numero ya que causa un segmentation fault ciertos valores*/
+	/*		aun no se por que pasa eso.*/
+	float spacing = 15.0f;
+	/*Si te quieres evitar de problemas mejor pon el el wMax y el hMax de forma manual
+	 * Recuerda que esto solo lo hago para que mi vec2d sea del tamanno exacto de la venta
+	 * y no me lo genera de mayor tamanno*/
+	const int wMax = (w/spacing+2);
+	const int hMax = (h/spacing+2);
+	std::vector<vec2d> lineasX(wMax);
+	std::vector<vec2d> lineasY(hMax);
 
 	drawCuadriculaX(spacing, w, lineasX);
 	drawCuadriculaY(spacing, h, lineasY);
 
-	/*TODO:DEV*/
-	/*[] Terminar que los puntos se vean en el centro*/
 	glLineWidth(2.0f);
 	glBegin(GL_LINES);
 	glColor3f(0.0f,0.0f,0.0f);
@@ -75,37 +84,37 @@ void display(){
 	}
 	glEnd();
 
-	/*__asm__("int3");*/
 	glPointSize(15.0f);
 	glBegin(GL_POINTS);
 	int getX = (sizeof(lineasX) / sizeof(lineasX[0])) / static_cast<int>(spacing);
-	for (int i = 0; i < getX; i ++){
-		glVertex2d(
-				CX(lineasX[i].x, lineasX[i+2].x),
-				CY(lineasY[i].x, lineasY[i+2].x)
-				);
+	std::vector<vec2d> posCenter(getX);
+	for (int i = 0; i < getX/2; i ++){
+		posCenter[i].x = CX(lineasX[i].x, lineasX[i+2].x);
+		posCenter[i].y = CX(lineasY[i].x, lineasY[i+2].x);
 	};
-	/*	if (i%2 == 0){*/
-	/*		glVertex2d(*/
-	/*				CX(CX(lineasY[i].x, lineasY[i+1].x), lineasY[i+2].x),*/
-	/*				CY(CY(lineasY[i].y, lineasY[i+1].y), lineasY[i+2].y) */
-	/*				);*/
-	/*	}*/
-	/*};*/
-glEnd();
+	for(auto &pos : posCenter){
+		glVertex2d(pos.x, pos.y);
+	}
+	glEnd();
+	glFlush();
+	/*__asm__("int3");*/
+};
 
-/*__asm__("int3");*/
-
-glFlush();
+void exitProgram(int signum){
+	glutDestroyWindow(glutGetWindow());
+	printf("<<<<<<< Saliendo del programa >>>>>>>");
+	exit(signum);
 };
 
 int main(int arg, char **argv){
 	// Inicializacion de mi ventana de trabajo
+	signal(SIGINT, exitProgram);
 	glutInit(&arg, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
 	glutCreateWindow("alffy");
 	glutDisplayFunc(display);
 	glutMainLoop();
+
 	return EXIT_SUCCESS;
 
 };

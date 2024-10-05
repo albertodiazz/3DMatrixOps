@@ -11,11 +11,10 @@
 /*#include <stdio.h>*/
 /*#include <algorithm>*/
 
-#define MIN(a,b) ( ((a) < (b)) ? (a) : (b) )
-#define MAX(a,b) ( ((a) > (b)) ? (a) : (b) )
 #define NORM(x, xmin, xmax) ( 2.0f * ( (x - xmin) / (xmax - xmin) ) -1.0f )
 #define CX(x1, x2) ( (x1 + x2) / 2 )
 #define CY(y1, y2) ( (y1 + y2) / 2 )
+#define M(AX,BX,AY,BY) ((BY - AY) / (BX - AX))
 
 struct vec2d{
 	float x, y;
@@ -51,6 +50,41 @@ void drawCuadriculaY(float spacing, int h, std::vector<vec2d> &v){
 	};
 };
 
+void rasterization(){
+	////////////////////
+	///RASTERIZATION
+	////////////////////
+	vec2d triagulo[2] = {
+		-0.556, -0.345,
+		0.564, 0.478
+	};
+	glPointSize(15.0f);
+	/*glLineWidth(5.0f);*/
+	glColor3f(1.0,0.0,1.0);
+	glBegin(GL_POINTS);
+	std::vector<vec2d> dotsPos;
+
+	vec2d p1 = triagulo[0]; 
+	vec2d p2 = triagulo[1]; 
+	int steps = 50;
+	float m = M(p1.x, p2.x, p1.y, p2.y);
+	for (int i = 0; i <= steps; i++) {
+		// Interpolamos la posición x
+		float t = (float)i / steps;
+		float x = p1.x + t * (p2.x - p1.x);  // Interpolación lineal para x
+		float y = m * (x - p2.x);     // Usamos la ecuación de la recta para y
+
+		// Dibujamos el punto
+		glVertex2f(x, y);
+	}
+
+
+	for(auto &pos : triagulo){
+		glVertex2d(pos.x, pos.y);
+	}
+	glEnd();
+};
+
 void display(){
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
@@ -70,6 +104,7 @@ void display(){
 	std::vector<vec2d> lineasX(wMax);
 	std::vector<vec2d> lineasY(hMax);
 
+	//Dibujamos el grid
 	drawCuadriculaX(spacing, w, lineasX);
 	drawCuadriculaY(spacing, h, lineasY);
 
@@ -84,20 +119,31 @@ void display(){
 	}
 	glEnd();
 
+	//Aqui agregamos nuestros puntos a la mitad de la pantalla
 	glPointSize(15.0f);
 	glBegin(GL_POINTS);
-	int getX = (sizeof(lineasX) / sizeof(lineasX[0])) / static_cast<int>(spacing);
-	std::vector<vec2d> posCenter(getX);
-	for (int i = 0; i < getX/2; i ++){
-		posCenter[i].x = CX(lineasX[i].x, lineasX[i+2].x);
-		posCenter[i].y = CX(lineasY[i].x, lineasY[i+2].x);
-	};
+	std::vector<vec2d> posCenter(lineasX.size());
+	posCenter.clear();
+	for (int i = 0; i < lineasX.size() - 1; ++i) {
+		for (int j = 0; j < lineasY.size() - 1; ++j) {
+			// Para cada cuadrado, tomar los puntos (i,j), (i+1,j), (i,j+1), (i+1,j+1)
+			float centerX = CX(lineasX[i].x, lineasX[i + 2].x);
+			float centerY = CY(lineasY[j].y, lineasY[j + 2].y);
+			posCenter.push_back({centerX, centerY});  
+		}
+	}
 	for(auto &pos : posCenter){
 		glVertex2d(pos.x, pos.y);
 	}
 	glEnd();
+	///////////////////////////////////
+	/// Aqui ocupamos la rasterizacion
+	///////////////////////////////////
+	rasterization();
+
 	glFlush();
 	/*__asm__("int3");*/
+
 };
 
 void exitProgram(int signum){
